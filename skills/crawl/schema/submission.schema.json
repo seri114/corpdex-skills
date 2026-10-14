@@ -1,0 +1,114 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://corpdex.dev/schema/crawl-submission.v1.json",
+	"title": "corpdex クロール提出物(changes)",
+	"description": "配布スキルが組み立てる `corpdex submit` 提出ファイルの形状。company_id・type・schema_version はCLIが注入するため、必須は changes のみ。field の語彙は packages/schema の CRAWL_FIELD_PATHS(取り込み管理フィールドを除く7フィールド)+ SUPPLEMENTAL_FIELD_PATHS(条件付き補充の資本金 — ADR 0023)と一致させ、CI(packages/cli/test/skill-assets.test.ts)がドリフトを検知する — 修正は packages/schema 側を先に行い、このファイルへ写す。",
+	"type": "object",
+	"required": ["changes"],
+	"properties": {
+		"changes": {
+			"type": "array",
+			"minItems": 1,
+			"description": "変更セット。各変更は対象フィールドの新しい状態全体(全置換 — 反映時に該当フィールドを丸ごと置換)",
+			"items": {
+				"type": "object",
+				"required": ["field", "status", "source_url"],
+				"additionalProperties": false,
+				"properties": {
+					"field": {
+						"enum": [
+							"links.contact",
+							"contact.phone",
+							"contact.fax",
+							"contact.email",
+							"industries",
+							"keywords",
+							"features",
+							"basics.capital_jpy"
+						],
+						"description": "提案可能なフィールド(マスタースキーマのキー)。basics.capital_jpy のみ条件付き補充(タスクJSONの supplemental_fields にあるときだけ提案可 — ADR 0023)。他の gBizInfo管理フィールド8種と basics.market(上場市場取り込み — #153)は含まない"
+					},
+					"status": {
+						"enum": ["present", "unknown", "unresearched", "absent"],
+						"description": "present=値あり / unknown=調査済み・不明 / absent=調査したが存在しない。unresearched は提出物では使わない"
+					},
+					"value": {
+						"description": "status=present のとき必須。型は対象フィールドに従う(string / string配列 / basics.capital_jpy のみ0以上の整数(円単位))"
+					},
+					"source_url": {
+						"type": "string",
+						"pattern": "^https?://[^\\s]+$",
+						"description": "その情報を実際に確認したページのURL(対象企業の公式サイト)"
+					},
+					"note": {
+						"type": "string",
+						"description": "投稿者・レビュアー向けメモ(任意)"
+					}
+				},
+				"allOf": [
+					{
+						"if": { "properties": { "status": { "const": "present" } } },
+						"then": { "required": ["value"] }
+					},
+					{
+						"if": {
+							"properties": {
+								"field": { "enum": ["industries", "keywords", "features"] }
+							}
+						},
+						"then": {
+							"properties": {
+								"value": {
+									"type": "array",
+									"items": { "type": "string" },
+									"minItems": 1
+								}
+							}
+						}
+					},
+					{
+						"if": {
+							"properties": {
+								"field": {
+									"enum": [
+										"links.contact",
+										"contact.phone",
+										"contact.fax",
+										"contact.email"
+									]
+								}
+							}
+						},
+						"then": {
+							"properties": {
+								"value": { "type": "string", "minLength": 1 }
+							}
+						}
+					},
+					{
+						"if": {
+							"properties": {
+								"field": { "enum": ["basics.capital_jpy"] }
+							}
+						},
+						"then": {
+							"properties": {
+								"value": { "type": "integer", "minimum": 0 }
+							}
+						}
+					}
+				]
+			}
+		},
+		"company_id": {
+			"type": "string",
+			"pattern": "^[0-9]{13}$",
+			"description": "対象企業の法人番号(省略可 — CLIがタスク状態から注入する)"
+		},
+		"type": {
+			"const": "crawl",
+			"description": "省略可 — CLIが注入する"
+		}
+	},
+	"additionalProperties": false
+}
