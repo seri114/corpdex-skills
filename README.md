@@ -23,7 +23,7 @@ npx skills add seri114/corpdex-skills -g
 
 ## 前提
 
-corpdex への協力には corpdex サイトのアカウントとアクセストークン(PAT)が必要です(サイトのマイページ・協力者向け案内を参照)。現在のスキルは corpdex CLI(サイトの配布ページから入手)前提の手順です。MCP サーバー経由の協力導線を準備中で、公開された時点でスキルとこの README を更新します。
+corpdex への協力には MCP サーバーへの接続が必要です(手順は corpdex サイトの[貢献の始め方](https://corpdex.jp/contribute)を参照 — OAuth ブラウザ承認、または PAT)。クロールとレビューの実行には検索・fetch のできるエージェント環境を使います。
 
 ## ソース
 
