@@ -16,7 +16,7 @@ description: corpdex のクロールタスクを1件実行する(タスク取得
 
 ## 0. 前提
 
-- MCP サーバー corpdex がクライアントに登録済みで、ツール `task_claim` / `task_submit` / `task_abort` が呼びられる(tasks スコープ)。ツールがなければ corpdex への接続がまだなので、ユーザーに corpdex サイトの協力ページの案内を促して終了する
+- MCP サーバー corpdex がクライアントに登録済みで、ツール `task_claim` / `task_submit` / `task_abort` が呼びられる(tasks スコープ)。ツールがなければ corpdex への接続がまだなので、ユーザーに corpdex サイトの協力ページ(https://corpdex.jp/contribute)の案内を促して終了する
 - **検索とfetchの手段を持つ**(WebSearch・WebFetch等。なくても§2・§3の代替経路を辿れるが、いずれの手段もない環境はクロール協力の前提を満たさない)
 - **1タスクにつき空の作業ディレクトリで実行する**(取得URLの記録と提出物が他タスクと混ざらないようにするため)
 
