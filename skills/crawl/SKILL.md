@@ -16,7 +16,12 @@ description: corpdex のクロールタスクを1件実行する(タスク取得
 
 ## 0. 前提
 
-- MCP サーバー corpdex がクライアントに登録済みで、ツール `task_claim` / `task_submit` / `task_abort` が呼びられる(tasks スコープ)。ツールがなければ corpdex への接続がまだなので、ユーザーに corpdex サイトの協力ページ(https://corpdex.jp/contribute)の案内を促して終了する
+- MCP サーバー corpdex がクライアントに登録済みで、ツール `task_claim` / `task_submit` / `task_abort` が呼びられる(tasks スコープ)。**ツールがなければ、次の順で接続の復旧を試みる**(何をしているかをユーザーに一言伝えてから進める):
+  1. `claude` CLI の有無を確認する(`command -v claude` など)。あれば:
+      - `claude mcp add --transport http corpdex https://corpdex.jp/api/mcp` を実行する(登録済みなどの失敗は続行してよい)
+      - 「ブラウザが開くので、corpdex の承認画面で『承認して接続』を押してください」と伝えてから `claude mcp login corpdex` を実行する(タイムアウトは5分)。ブラウザが開かなかった場合は表示された URL を開いてもらい、完了に必要ならリダイレクト先 URL の貼り戻しを案内する
+      - 完了後 §1 の `task_claim` に進む。ツールがまだ呼べなければ「接続は完了しています。このセッションを一度終了し、もう一度クロールを依頼してください(再承認は不要です)」と案内して終了する
+  2. `claude` CLI がなければ自動設定はできない。corpdex サイトの協力ページ(https://corpdex.jp/contribute)の案内(コピペプロンプト・クライアント別の設定・PAT での接続)を提示して終了する
 - **検索とfetchの手段を持つ**(WebSearch・WebFetch等。なくても§2・§3の代替経路を辿れるが、いずれの手段もない環境はクロール協力の前提を満たさない)
 - **1タスクにつき空の作業ディレクトリで実行する**(取得URLの記録と提出物が他タスクと混ざらないようにするため)
 
