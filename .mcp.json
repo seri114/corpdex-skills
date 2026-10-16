@@ -1,0 +1,6 @@
+{
+	"corpdex": {
+		"type": "http",
+		"url": "https://corpdex.jp/api/mcp"
+	}
+}
