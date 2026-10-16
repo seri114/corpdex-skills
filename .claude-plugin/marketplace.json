@@ -1,15 +1,13 @@
 {
-  "name": "corpdex-skills",
-  "owner": {
-    "name": "seri114"
-  },
-  "plugins": [
-    {
-      "name": "corpdex",
-      "source": "./",
-      "description": "日本企業データベース corpdex への貢献(クロール・レビュー)用スキルと MCP 接続",
-      "homepage": "https://corpdex.jp"
-    }
-  ],
-  "description": "corpdex(日本企業データベース)の貢献スキルと MCP 接続の配布"
+	"name": "corpdex-skills",
+	"owner": { "name": "seri114" },
+	"plugins": [
+		{
+			"name": "corpdex",
+			"source": "./",
+			"description": "日本企業データベース corpdex への貢献(クロール・レビュー)用スキルと MCP 接続",
+			"homepage": "https://corpdex.jp"
+		}
+	],
+	"description": "corpdex(日本企業データベース)の貢献スキルと MCP 接続の配布"
 }
