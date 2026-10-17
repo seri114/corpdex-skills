@@ -12,7 +12,7 @@ description: corpdex のクロールタスクを1件実行する(タスク取得
 
 1. **取得マナーは自分で守る**。ページの取得は環境のfetch手段(WebFetch等)で行い、**robots.txt・同一ドメイン3秒以上の間隔・1タスク30URL上限・直列実行**を自分で守る(§3)。取得に成功したURLはすべて記録し、提出時に fetched_urls として提出する — サーバーが件数上限と出典との一致を機械検証し、記録にないURLを出典に書いた提出は拒否される(守則2の裏打ち)
 2. **出典に書いてあることだけを提案する**。要約・意訳・類推・別ページからの持ち込みをしない。提出物はレビューで出典URLを再取得して突合される(値が出土しないchangesは棄却される)。
-3. **取り込み管理フィールドは原則1つも提案しない**: `name` / `name_reading` / `links.website` / `contact.postal_address` / `basics.founded_on` / `basics.representative` / `basics.employees` / `gbizinfo_industries`(gBizInfoが常に正 — ADR 0009)、`basics.market`(上場市場はEDINET×東証data_jの権威ソース取り込みが全社確定する — #153)。会社概要テーブルやIRページに載っていても changes に入れない(入れると機械検証で提出ごと拒否される)。**例外は資本金(`basics.capital_jpy`)のみ**: タスクJSONの `supplemental_fields` に含まれているときだけ、会社概要の資本金を提案してよい(後述 — ADR 0009の例外。リストにないときは資本金も提案しない)。
+3. **取り込み管理フィールドは原則1つも提案しない**: `name` / `name_reading` / `links.website` / `contact.postal_address` / `basics.employees` / `gbizinfo_industries`(gBizInfoが常に正 — ADR 0009)、`basics.market`(上場市場はEDINET×東証data_jの権威ソース取り込みが全社確定する — #153)。会社概要テーブルやIRページに載っていても changes に入れない(入れると機械検証で提出ごと拒否される)。**例外は補充3フィールド(資本金 `basics.capital_jpy` / 設立日 `basics.founded_on` / 代表者 `basics.representative`)のみ**: タスクJSONの `supplemental_fields` に含まれているフィールドだけ、会社概要等からの提案をしてよい(gBizInfoが空の間だけ — ADR 0009の例外。リストにないフィールドは提案しない)。
 
 ## 0. 前提
 
@@ -21,7 +21,7 @@ description: corpdex のクロールタスクを1件実行する(タスク取得
       - `claude mcp add --transport http corpdex https://corpdex.jp/api/mcp` を実行する(登録済みなどの失敗は続行してよい)
       - 「ブラウザが開くので、corpdex の承認画面で『承認して接続』を押してください」と伝えてから `claude mcp login corpdex` を実行する(タイムアウトは5分)。ブラウザが開かなかった場合は表示された URL を開いてもらい、完了に必要ならリダイレクト先 URL の貼り戻しを案内する
       - 完了後 §1 の `task_claim` に進む。ツールがまだ呼べなければ「接続は完了しています。このセッションを一度終了し、もう一度クロールを依頼してください(再承認は不要です)」と案内して終了する
-  2. `claude` CLI がなければ自動設定はできない。corpdex サイトの協力ページ(https://corpdex.jp/contribute)の案内(コピペプロンプト・クライアント別の設定・PAT での接続)を提示して終了する
+  2. `claude` CLI がなければ自動設定はできない。corpdex サイトの協力ページ(https://corpdex.jp/agent — 旧「貢献の始め方」ページ)の案内(コピペプロンプト・クライアント別の設定・PAT での接続)を提示して終了する
 - **検索とfetchの手段を持つ**(WebSearch・WebFetch等。なくても§2・§3の代替経路を辿れるが、いずれの手段もない環境はクロール協力の前提を満たさない)
 - **1タスクにつき空の作業ディレクトリで実行する**(取得URLの記録と提出物が他タスクと混ざらないようにするため)
 
@@ -33,7 +33,7 @@ description: corpdex のクロールタスクを1件実行する(タスク取得
 - タスクJSONが返ったら読むべきもの:
   - `company_name` / `corporate_number` — 調査対象の企業(1タスク=1企業)
   - `priority_fields` — 未調査フィールド(優先して探す)
-  - `supplemental_fields` — 条件付き補充フィールド(このリストに `basics.capital_jpy` があるときだけ資本金を提案してよい — 空配列なら資本金は提案しない。リストの内容はサーバーがマスター状態から判定するため、自分で判断しない)
+  - `supplemental_fields` — 条件付き補充フィールド(このリストにあるフィールド(`basics.capital_jpy` / `basics.founded_on` / `basics.representative` のいずれか)だけ提案してよい — 空配列ならどれも提案しない。リストの内容はサーバーがマスター状態から判定するため、自分で判断しない)
   - `master` — 各フィールドの現在値(全置換の基準。`{status:"unresearched"}` は未調査)
   - `fetch_limit`(=30)・`lease.expires_at`(リース期限)
 - **429 quota_exceeded**(同時リース枠・日次クレーム上限)なら、応答の message を報告して終了する
@@ -103,7 +103,7 @@ description: corpdex のクロールタスクを1件実行する(タスク取得
 
 ## 4. changes の組み立て
 
-**組み立ての前に必ず [references/fields.md](references/fields.md) を読む** — 8フィールド+条件付きの資本金、それぞれの抽出規則・整形規則・status判断の定義。初回や判断に迷うときは [references/example.md](references/example.md)(実例: 取材テキスト→提出物)も読む。changes のJSON形状は [schema/submission.schema.json](schema/submission.schema.json)。
+**組み立ての前に必ず [references/fields.md](references/fields.md) を読む** — 7フィールド+条件付きの補充3フィールド(資本金・設立日・代表者)、それぞれの抽出規則・整形規則・status判断の定義。初回や判断に迷うときは [references/example.md](references/example.md)(実例: 取材テキスト→提出物)も読む。changes のJSON形状は [schema/submission.schema.json](schema/submission.schema.json)。
 
 要点(詳細は fields.md):
 
@@ -115,7 +115,7 @@ description: corpdex のクロールタスクを1件実行する(タスク取得
 | `unresearched` | 未調査 | **提出物では使わない**(調査済みなのに未調査は矛盾) |
 
 - **リスト型フィールド(`industries` / `keywords` / `features`)は `present` + 配列でのみ提案**する(空配列・非presentは使わない)
-- **資本金(`basics.capital_jpy`)は `supplemental_fields` にあるときだけ提案する**(円単位の整数に換算。「5,000万円」→ `50000000`。会社概要に資本金の記載がなければ `unknown` — 株式会社に資本金は必ず存在するため `absent` にしない。詳細は fields.md)
+- **補充3フィールド(資本金 `basics.capital_jpy` / 設立日 `basics.founded_on` / 代表者 `basics.representative`)は `supplemental_fields` にあるときだけ提案する**(資本金は円単位の整数に換算「5,000万円」→ `50000000`、記載がなければ `unknown` — 株式会社に資本金は必ず存在するため `absent` にしない。設立日は和暦→西暦換算・「設立」優先(なければ「創業」)・年/年月/年月日の精度そのまま、代表者は役職+氏名へ整形。詳細は fields.md)
 - `industries` を提案するときは、まず **corpdex サイトの `/industries`(業界一覧ページ)をfetch**し、リンクURL(`/industries/<語彙ID>`)から語彙IDを確認する(**語彙ID以外は機械検証で拒否される**。表示名・自分で作った英語IDは不可)。サイトURLは MCP サーバーのURLのorigin(`/api/mcp` を除いた部分)— 分からなければユーザーに確認する。fetchで開けない環境では `industries` は提案しない
 - **触れたフィールドだけを提出してよい**(部分提出)。1つも確認できないフィールドは changes に入れない
 - changes は `task_submit` に配列のまま渡す(`company_id` / `fetched_urls` とともに引数で渡す — §5)

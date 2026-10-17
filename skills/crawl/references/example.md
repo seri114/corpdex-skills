@@ -1,6 +1,6 @@
 # 実例: 取材テキストから提出物へ
 
-架空の「株式会社ミナト電子工業」(法人番号 9050005000055)の例。タスクJSONの `master` は全フィールド `unresearched` / `null`、`priority_fields` は8フィールド全部、とする。
+架空の「株式会社ミナト電子工業」(法人番号 9050005000055)の例。タスクJSONの `master` は全フィールド `unresearched` / `null`、`priority_fields` は7フィールド全部、`supplemental_fields` は `["basics.capital_jpy", "basics.founded_on", "basics.representative"]`(gBizInfoが空の間=補充可能)とする。
 
 ## 取材
 
@@ -34,15 +34,15 @@
 # 会社概要 | 株式会社ミナト電子工業
 会社概要
 会社名 | 株式会社ミナト電子工業
-設立 | 2005年4月
+設立 | 平成17年4月
 資本金 | 3,000万円
-代表者 | 港 太郎
+代表者 | 港 太郎(代表取締役)
 従業員数 | 42名
 事業内容 | 組み込みシステムの受託開発、制御盤の設計・製造
 FAX | 06-5555-1141
 ```
 
-読み取り: 設立・代表者・従業員数は**管理フィールドで提案しない**。資本金もこのタスクの `supplemental_fields` が空(=gBizInfoに値がある)のため提案しない(条件付き補充 — タスクJSONのフラグがあるときだけ会社概要の資本金を円換算で提案できる。ADR 0023)。「事業内容」は読点区切りの文なので keywords には加えない(keywords はトップの製品ラインナップ列挙から)。FAXを確認。上場市場はクロール対象外(#153)。
+読み取り: 従業員数は**管理フィールドで提案しない**。このタスクの `supplemental_fields` に資本金・設立日・代表者があるため3つとも提案する(条件付き補充 — ADR 0023/#382): 設立「平成17年4月」→ `2005-04`(和暦→西暦・年月のまま)、資本金「3,000万円」→ `30000000`(円換算)、代表者「港 太郎(代表取締役)」→ `代表取締役 港 太郎`(括弧書きを展開し役職を前へ。役職語の読み替えはしない)。「事業内容」は読点区切りの文なので keywords には加えない(keywords はトップの製品ラインナップ列挙から)。FAXを確認。上場市場はクロール対象外(#153)。
 
 **3回目: お問い合わせ** fetch `https://www.minato-denshi.example/contact/`(抜粋):
 
@@ -119,6 +119,27 @@ FAX | 06-5555-1141
       "status": "present",
       "value": ["BtoB"],
       "source_url": "https://www.minato-denshi.example/"
+    },
+    {
+      "field": "basics.founded_on",
+      "status": "present",
+      "value": "2005-04",
+      "source_url": "https://www.minato-denshi.example/company/",
+      "note": "会社概要の「設立 平成17年4月」を西暦換算(年月のまま)"
+    },
+    {
+      "field": "basics.representative",
+      "status": "present",
+      "value": "代表取締役 港 太郎",
+      "source_url": "https://www.minato-denshi.example/company/",
+      "note": "括弧書きの役職を展開し役職を前・氏名を後ろへ"
+    },
+    {
+      "field": "basics.capital_jpy",
+      "status": "present",
+      "value": 30000000,
+      "source_url": "https://www.minato-denshi.example/company/",
+      "note": "会社概要の「資本金 3,000万円」を円換算"
     }
   ]
 }
@@ -129,7 +150,8 @@ FAX | 06-5555-1141
 ## この例のポイント
 
 - `company_id` はタスクJSONの `corporate_number`、`fetched_urls` は出典URLをすべて含む(出典が記録にない提出は機械検証で拒否される)
-- 管理フィールド(設立・代表者・従業員数)はテーブルにあっても1つも入れていない。資本金は `supplemental_fields` が空のため同じく対象外
+- 管理フィールド(従業員数・所在地)はテーブルにあっても1つも入れていない。資本金・設立日・代表者は `supplemental_fields` にあるためだけ提案している(リストが空のタスクでは3つとも対象外)
+- 設立日は出典の精度(年月)をそのまま — 「2005-04」を「2005-04-01」にしていない
 - 電話・FAXはラベルを除いた番号本体。複数候補(採用専用)には触れていない
 - keywords は製品ラインナップの**原文どおり**3項目のみ(事業内容の文から語を作っていない)
 - 「サイトリニューアル中で何も情報がない」ページだけの企業なら: `links.contact` / `contact.phone` / `contact.fax` / `contact.email` は `absent`(出典はそのページ)。リスト3種は提案しない
